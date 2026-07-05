@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Diario de Cristina</title>
+<meta name="theme-color" content="#0f1512">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Diario">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0f1512;--surface:#171f1a;--surface2:#1f2a23;--line:#2a352d;
+    --ink:#e9f0ea;--ink-soft:#9db0a4;--ink-faint:#6d8074;
+    --mint:#4fe08a;--mint-dim:#173026;--amber:#f2b45c;--amber-dim:#2e2513;
+    --coral:#ff7d68;--data:#5cd0d0;--r:18px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:var(--bg);color:var(--ink);font-family:"Manrope",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+  body{padding-bottom:calc(78px + env(safe-area-inset-bottom))}
+  h1,h2,h3{font-family:"Space Grotesk",sans-serif;font-weight:600;letter-spacing:-.02em}
+  button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+  input,select,textarea{font-family:inherit;font-size:16px}
+  ::placeholder{color:var(--ink-faint)}
+
+  header.top{padding:24px 20px 10px}
+  header.top .eyebrow{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--mint);font-weight:700}
+  header.top h1{font-size:29px;margin-top:4px}
+
+  main{padding:8px 16px 24px;max-width:560px;margin:0 auto}
+  .view{display:none}
+  .view.active{display:block;animation:fade .25s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:17px;margin-bottom:13px}
+  .card h2{font-size:18px;margin-bottom:2px}
+  .card .hint{font-size:12.5px;color:var(--ink-soft);margin-bottom:13px}
+
+  .nudge{border-radius:var(--r);padding:14px 16px;margin-bottom:11px;display:flex;gap:12px;align-items:flex-start;border:1px solid var(--line);background:var(--surface2)}
+  .nudge.tap{cursor:pointer}
+  .nudge .dot{width:8px;height:8px;border-radius:50%;margin-top:7px;flex:none;background:var(--ink-faint)}
+  .nudge.warn{background:var(--amber-dim);border-color:#4a3c1e}
+  .nudge.warn .dot{background:var(--amber);box-shadow:0 0 10px rgba(242,180,92,.5)}
+  .nudge.info{background:var(--mint-dim);border-color:#22503a}
+  .nudge.info .dot{background:var(--mint);box-shadow:0 0 10px rgba(79,224,138,.5)}
+  .nudge.calm{background:var(--surface2)}
+  .nudge.calm .dot{background:var(--mint)}
+  .nudge .body{font-size:14px;line-height:1.45}
+  .nudge .body b{font-weight:700}
+  .nudge .body .why{display:block;color:var(--ink-soft);font-size:12.5px;margin-top:3px}
+
+  .timeline{position:relative;height:56px;margin:8px 2px 2px;border-radius:12px;background:var(--surface2);overflow:hidden;border:1px solid var(--line)}
+  .timeline .track{position:absolute;left:0;right:0;top:50%;height:2px;background:var(--line)}
+  .timeline .seg{position:absolute;top:calc(50% - 4px);height:8px;border-radius:5px;background:var(--mint);box-shadow:0 0 10px rgba(79,224,138,.4)}
+  .timeline .mark{position:absolute;top:50%;width:11px;height:11px;border-radius:50%;transform:translate(-50%,-50%);border:2px solid var(--surface)}
+  .timeline .mark.carb{background:var(--amber)}
+  .timeline .mark.meal{background:var(--ink-soft)}
+  .timeline .hours{position:absolute;bottom:4px;left:0;right:0;display:flex;justify-content:space-between;padding:0 7px;font-size:9px;color:var(--ink-faint)}
+  .legend{display:flex;gap:14px;font-size:11px;color:var(--ink-soft);margin-top:9px;flex-wrap:wrap}
+  .legend span{display:inline-flex;align-items:center;gap:5px}
+  .legend i{width:8px;height:8px;border-radius:50%;display:inline-block}
+
+  .energy{display:flex;gap:8px}
+  .energy button{flex:1;padding:11px 4px;border-radius:14px;background:var(--surface2);border:1px solid var(--line);font-size:26px;line-height:1;transition:all .14s;filter:grayscale(.65);opacity:.6}
+  .energy button:active{transform:scale(.95)}
+  .energy button.on{background:var(--mint-dim);border-color:var(--mint);filter:none;opacity:1;transform:translateY(-3px)}
+  .energy-label{text-align:center;font-family:"Space Grotesk",sans-serif;font-size:14px;color:var(--ink-soft);font-weight:600;margin-top:10px}
+
+  .hist-tabs{display:flex;gap:6px;margin:16px 0 11px}
+  .hist-tabs button{padding:6px 13px;border-radius:999px;border:1px solid var(--line);background:var(--surface2);color:var(--ink-soft);font-size:12px;font-weight:700}
+  .hist-tabs button.on{background:var(--mint-dim);border-color:var(--mint);color:var(--mint)}
+  .hweek{display:flex;gap:6px}
+  .hcell{flex:1;text-align:center}
+  .hcell .hd{font-size:10px;color:var(--ink-faint);margin-bottom:4px;font-weight:600}
+  .hcell .he{font-size:21px;background:var(--surface2);border:1px solid var(--line);border-radius:11px;padding:7px 0}
+  .hcell .he.empty{color:var(--ink-faint);font-size:14px;filter:none}
+  .hcell.today .he{border-color:var(--mint)}
+  .hmonth{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
+  .hmonth .mh{font-size:9px;color:var(--ink-faint);text-align:center;font-weight:700;padding-bottom:2px}
+  .hmonth .mc{aspect-ratio:1;display:grid;place-items:center;font-size:16px;background:var(--surface2);border:1px solid var(--line);border-radius:9px}
+  .hmonth .mc.blank{background:transparent;border:none}
+  .hmonth .mc.today{border-color:var(--mint)}
+  .hmonth .mc .dn{font-size:9px;color:var(--ink-faint)}
+
+  .stats{display:flex;gap:9px}
+  .stat{flex:1;text-align:center;padding:14px 8px;background:var(--surface);border-radius:14px;border:1px solid var(--line)}
+  .stat .n{font-family:"Space Grotesk",sans-serif;font-size:25px;font-weight:700}
+  .stat .l{font-size:11px;color:var(--ink-soft);margin-top:2px}
+
+  .field{margin-bottom:11px}
+  .field label{display:block;font-size:12px;color:var(--ink-soft);margin-bottom:5px;font-weight:600}
+  .field input,.field select,.field textarea{width:100%;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--surface2);color:var(--ink);font-size:15px}
+  .field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--mint)}
+  .field textarea{resize:vertical;min-height:46px}
+  .row{display:flex;gap:9px}.row>*{flex:1}
+  .chips{display:flex;gap:7px;flex-wrap:wrap}
+  .chip{padding:9px 14px;border-radius:999px;border:1px solid var(--line);background:var(--surface2);font-size:13.5px;color:var(--ink-soft);font-weight:600;cursor:pointer}
+  .chip.on{background:var(--mint);border-color:var(--mint);color:#0e1512}
+  .check{display:flex;align-items:center;gap:10px;padding:11px 12px;border:1px solid var(--line);border-radius:12px;background:var(--surface2);font-size:14px;color:var(--ink-soft);cursor:pointer}
+  .check input{width:18px;height:18px;accent-color:var(--amber)}
+  .save{width:100%;padding:14px;border-radius:13px;background:var(--mint);color:#0e1512;font-weight:700;font-size:15px;margin-top:4px}
+  .save:active{opacity:.9}
+  .grp[hidden]{display:none}
+  .subcard{background:var(--surface2);border:1px solid var(--line);border-radius:13px;padding:12px;margin-bottom:10px}
+  .addline{width:100%;padding:11px;border:1px dashed #38493e;border-radius:11px;color:var(--mint);font-weight:700;font-size:13.5px;background:transparent}
+
+  .log{list-style:none}
+  .log li{display:flex;align-items:center;gap:11px;padding:12px 2px;border-bottom:1px solid var(--line)}
+  .log li:last-child{border-bottom:none}
+  .log .ic{width:36px;height:36px;border-radius:11px;flex:none;display:grid;place-items:center;font-size:16px;background:var(--surface2);border:1px solid var(--line)}
+  .log .txt{flex:1;min-width:0}
+  .log .txt .t{font-size:14.5px;font-weight:600}
+  .log .txt .s{font-size:12px;color:var(--ink-faint);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .log .time{font-size:12px;color:var(--ink-faint);white-space:nowrap;font-variant-numeric:tabular-nums}
+  .log .del{color:var(--ink-faint);font-size:19px;padding:4px 6px;line-height:1}
+  .empty{text-align:center;color:var(--ink-faint);font-size:13px;padding:20px 10px}
+
+  .meds{list-style:none}
+  .meds li{display:flex;align-items:center;gap:13px;padding:14px 2px;border-bottom:1px solid var(--line);cursor:pointer}
+  .meds li:last-child{border-bottom:none}
+  .meds .box{width:27px;height:27px;border-radius:9px;border:2px solid var(--line);flex:none;display:grid;place-items:center;color:#0e1512;font-size:15px;font-weight:700;transition:all .12s}
+  .meds li.done .box{background:var(--mint);border-color:var(--mint)}
+  .meds li.done .m-name{color:var(--ink-faint);text-decoration:line-through}
+  .meds .m-name{font-weight:700;font-size:15px}
+  .meds .m-sub{font-size:12px;color:var(--ink-faint)}
+  .meds .m-del{margin-left:auto;color:var(--ink-faint);font-size:19px;padding:4px 8px}
+  .pill-count{font-family:"Space Grotesk",sans-serif;font-size:17px;color:var(--mint);font-weight:700}
+  .note-eu{margin-top:12px;font-size:12px;color:var(--ink-soft);background:var(--surface2);border:1px solid var(--line);border-radius:12px;padding:11px 12px;line-height:1.45}
+
+  .labs{width:100%;border-collapse:collapse;font-size:13px}
+  .labs th{text-align:left;font-weight:700;color:var(--ink-soft);padding:8px 6px;border-bottom:2px solid var(--line);font-size:11px;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap}
+  .labs td{padding:10px 6px;border-bottom:1px solid var(--line);white-space:nowrap}
+  .labs td.name{font-weight:600}
+  .labs .val{font-variant-numeric:tabular-nums}
+  .labs .ref{color:var(--ink-faint);font-size:11px}
+  .trend{font-size:10px;margin-left:5px}
+  .trend.up{color:var(--coral)}.trend.down{color:var(--mint)}.trend.flat{color:var(--ink-faint)}
+  .flag{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--amber);margin-left:6px;vertical-align:middle}
+
+  nav{position:fixed;bottom:0;left:0;right:0;background:rgba(15,21,18,.9);backdrop-filter:blur(14px);border-top:1px solid var(--line);display:flex;padding-bottom:env(safe-area-inset-bottom);z-index:20}
+  nav button{flex:1;padding:10px 2px 9px;display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--ink-faint);font-size:10px;font-weight:600}
+  nav button svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+  nav button.on{color:var(--mint)}
+  .toast{position:fixed;left:50%;bottom:calc(88px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(20px);background:var(--mint);color:#0e1512;padding:11px 18px;border-radius:999px;font-size:13.5px;font-weight:700;opacity:0;pointer-events:none;transition:all .25s ease;z-index:30;white-space:nowrap}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="eyebrow" id="dateLabel"></div>
+  <h1 id="greeting">Hola, Cristina</h1>
+</header>
+
+<main>
+  <!-- ============ HOY ============ -->
+  <section class="view active" id="view-hoy">
+    <div id="nudges"></div>
+
+    <div class="card">
+      <h2>Tu día</h2>
+      <div class="hint">Comidas y ejercicio, hora a hora.</div>
+      <div class="timeline" id="timeline">
+        <div class="track"></div>
+        <div class="hours"><span>7h</span><span>12h</span><span>17h</span><span>22h</span></div>
+      </div>
+      <div class="legend">
+        <span><i style="background:var(--ink-soft)"></i>Comida</span>
+        <span><i style="background:var(--amber)"></i>Rica en hidratos</span>
+        <span><i style="background:var(--mint)"></i>Ejercicio</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>¿Cómo va la energía?</h2>
+      <div class="hint">Al final del día, marca cómo te has sentido.</div>
+      <div class="energy" id="energyStrip">
+        <button onclick="setEnergy(1)">😩</button>
+        <button onclick="setEnergy(2)">😕</button>
+        <button onclick="setEnergy(3)">😐</button>
+        <button onclick="setEnergy(4)">😊</button>
+        <button onclick="setEnergy(5)">😄</button>
+      </div>
+      <div class="energy-label" id="energyLabel">Sin marcar</div>
+
+      <div class="hist-tabs">
+        <button class="on" data-h="week" onclick="setHist('week')">Semana</button>
+        <button data-h="month" onclick="setHist('month')">Mes</button>
+      </div>
+      <div id="energyHist"></div>
+    </div>
+
+    <div class="stats">
+      <div class="stat"><div class="n" id="statMin">0</div><div class="l">min de ejercicio</div></div>
+      <div class="stat"><div class="n" id="statSteps">0</div><div class="l">pasos</div></div>
+      <div class="stat"><div class="n" id="statMeals">0</div><div class="l">comidas</div></div>
+    </div>
+  </section>
+
+  <!-- ============ EJERCICIO ============ -->
+  <section class="view" id="view-ejercicio">
+    <div class="card">
+      <h2>Añadir ejercicio</h2>
+      <div class="hint">Elige el tipo y rellena solo lo que toque.</div>
+      <div class="field">
+        <label>Tipo</label>
+        <div class="chips" id="actChips">
+          <div class="chip on" data-k="Caminar">Caminar</div>
+          <div class="chip" data-k="Gimnasio">Gimnasio</div>
+          <div class="chip" data-k="Natación">Natación</div>
+          <div class="chip" data-k="Cardio">Cardio</div>
+          <div class="chip" data-k="Clase">Clase dirigida</div>
+        </div>
+      </div>
+
+      <div class="grp" data-grp="Caminar">
+        <div class="row">
+          <div class="field"><label>Minutos</label><input type="number" id="cam_min" inputmode="numeric" placeholder="15"></div>
+          <div class="field"><label>Pasos (opcional)</label><input type="number" id="cam_steps" inputmode="numeric" placeholder="—"></div>
+        </div>
+        <div class="field"><label>Nota (opcional)</label><input type="text" id="cam_note" placeholder="p. ej. después de comer"></div>
+      </div>
+
+      <div class="grp" data-grp="Gimnasio" hidden>
+        <div class="subcard">
+          <div class="field"><label>Ejercicio</label>
+            <select id="gym_name">
+              <option>Sentadilla</option><option>Prensa de pierna</option><option>Peso muerto</option>
+              <option>Zancadas</option><option>Hip thrust</option><option>Extensión de cuádriceps</option>
+              <option>Curl femoral</option><option>Gemelo</option><option>Press de banca</option>
+              <option>Press militar</option><option>Jalón al pecho</option><option>Remo</option>
+              <option>Curl de bíceps</option><option>Extensión de tríceps</option><option>Elevaciones laterales</option>
+              <option>Abdominales</option><option>Otro</option>
+            </select>
+          </div>
+          <div class="field" id="gym_other_wrap" hidden><label>¿Cuál?</label><input type="text" id="gym_other" placeholder="Nombre del ejercicio"></div>
+          <div class="row">
+            <div class="field"><label>Series</label><input type="number" id="gym_sets" inputmode="numeric" placeholder="4"></div>
+            <div class="field"><label>Reps</label><input type="number" id="gym_reps" inputmode="numeric" placeholder="10"></div>
+            <div class="field"><label>Peso (kg)</label><input type="number" step="0.5" id="gym_weight" inputmode="decimal" placeholder="—"></div>
+          </div>
+          <button class="addline" onclick="addGymEx()">+ Añadir ejercicio a la sesión</button>
+        </div>
+        <ul class="log" id="gymDraft"></ul>
+        <div class="field"><label>Duración total de la sesión (min)</label><input type="number" id="gym_min" inputmode="numeric" placeholder="45"></div>
+      </div>
+
+      <div class="grp" data-grp="Natación" hidden>
+        <div class="field"><label>Estilo</label>
+          <select id="swim_style"><option>Crol / libre</option><option>Espalda</option><option>Braza</option><option>Mariposa</option><option>Mixto</option></select>
+        </div>
+        <div class="row">
+          <div class="field"><label>Largos</label><input type="number" id="swim_largos" inputmode="numeric" placeholder="20"></div>
+          <div class="field"><label>Minutos</label><input type="number" id="swim_min" inputmode="numeric" placeholder="30"></div>
+        </div>
+      </div>
+
+      <div class="grp" data-grp="Cardio" hidden>
+        <div class="row">
+          <div class="field"><label>Actividad</label>
+            <select id="cardio_type"><option>Cinta (andar/correr)</option><option>Bici estática</option><option>Elíptica</option><option>Remo</option><option>Escaladora</option><option>Otro</option></select>
+          </div>
+          <div class="field"><label>Minutos</label><input type="number" id="cardio_min" inputmode="numeric" placeholder="25"></div>
+        </div>
+      </div>
+
+      <div class="grp" data-grp="Clase" hidden>
+        <div class="row">
+          <div class="field"><label>Clase</label>
+            <select id="class_type"><option>Ciclo / Spinning</option><option>Body Pump</option><option>GAP</option><option>Zumba</option><option>Pilates</option><option>Yoga</option><option>Body Combat</option><option>Otra</option></select>
+          </div>
+          <div class="field"><label>Minutos</label><input type="number" id="class_min" inputmode="numeric" placeholder="45"></div>
+        </div>
+      </div>
+
+      <div class="field" style="margin-top:2px"><label>Hora</label><input type="time" id="act_time"></div>
+      <button class="save" onclick="saveExercise()">Guardar ejercicio</button>
+    </div>
+
+    <div class="card">
+      <h2>Registrado hoy</h2>
+      <ul class="log" id="actLog"></ul>
+    </div>
+  </section>
+
+  <!-- ============ COMER ============ -->
+  <section class="view" id="view-comer">
+    <div class="card">
+      <h2>Registrar comida</h2>
+      <div class="hint">Solo apunta qué comes y cuándo. Aquí no se juzga ni se cuentan calorías.</div>
+      <div class="field">
+        <label>Momento</label>
+        <div class="chips" id="mealChips">
+          <div class="chip on" data-k="Desayuno">Desayuno</div>
+          <div class="chip" data-k="Comida">Comida</div>
+          <div class="chip" data-k="Cena">Cena</div>
+          <div class="chip" data-k="Snack">Snack</div>
+        </div>
+      </div>
+      <div class="field"><label>¿Qué has comido?</label><textarea id="mealText" placeholder="p. ej. lentejas y ensalada"></textarea></div>
+      <div class="field"><label>Hora</label><input type="time" id="mealTime"></div>
+      <label class="check"><input type="checkbox" id="mealCarb"> Comida rica en hidratos (pan, pasta, arroz, dulce…)</label>
+      <div class="hint" style="margin:8px 0 12px">Solo sirve para recordarte que un paseo después ayuda más. No es “malo”.</div>
+      <button class="save" onclick="addMeal()">Guardar comida</button>
+    </div>
+    <div class="card">
+      <h2>Registrado hoy</h2>
+      <ul class="log" id="mealLog"></ul>
+    </div>
+  </section>
+
+  <!-- ============ MEDICACIÓN ============ -->
+  <section class="view" id="view-medicacion">
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:baseline">
+        <h2>Cada día</h2>
+        <span class="pill-count" id="medProgress">0/4</span>
+      </div>
+      <div class="hint">Marca cada toma. Se reinicia solo cada día.</div>
+      <ul class="meds" id="medDaily"></ul>
+      <div class="note-eu">El Eutirox se absorbe mejor en ayunas: tómalo ~1 h antes del desayuno y separado del resto de pastillas.</div>
+    </div>
+    <div class="card">
+      <h2>Según el ciclo</h2>
+      <div class="hint">Añade la medicación que solo tomas ciertos días (p. ej. la del tratamiento). Confírmala siempre con tu médico.</div>
+      <div class="row">
+        <div class="field" style="flex:2"><label>Medicación</label><input type="text" id="cyc_name" placeholder="p. ej. Letrozol"></div>
+        <div class="field"><label>Momento</label><input type="text" id="cyc_when" placeholder="cena"></div>
+      </div>
+      <button class="save" onclick="addCycleMed()">Añadir a hoy</button>
+      <ul class="meds" id="medCycle" style="margin-top:12px"></ul>
+    </div>
+  </section>
+
+  <!-- ============ ANÁLISIS ============ -->
+  <section class="view" id="view-analisis">
+    <div class="card">
+      <h2>Marcadores en el tiempo</h2>
+      <div class="hint">El termómetro real de la resistencia a la insulina y el hígado. La flecha compara con tu registro anterior.</div>
+      <div style="overflow-x:auto"><table class="labs" id="labsTable"></table></div>
+    </div>
+    <div class="card">
+      <h2>Añadir analítica</h2>
+      <div class="hint">Rellena solo lo que tengas. Fecha de la extracción.</div>
+      <div class="field"><label>Fecha</label><input type="date" id="labDate"></div>
+      <div class="row">
+        <div class="field"><label>Glucosa (mg/dL)</label><input type="number" id="lab_glucosa" inputmode="decimal" placeholder="—"></div>
+        <div class="field"><label>HbA1c (%)</label><input type="number" step="0.1" id="lab_hba1c" inputmode="decimal" placeholder="—"></div>
+      </div>
+      <div class="row">
+        <div class="field"><label>ALT / GPT (U/L)</label><input type="number" id="lab_alt" inputmode="numeric" placeholder="—"></div>
+        <div class="field"><label>GGT (U/L)</label><input type="number" id="lab_ggt" inputmode="numeric" placeholder="—"></div>
+      </div>
+      <div class="row">
+        <div class="field"><label>AST / GOT (U/L)</label><input type="number" id="lab_ast" inputmode="numeric" placeholder="—"></div>
+        <div class="field"><label>Insulina (µU/mL)</label><input type="number" step="0.1" id="lab_insulina" inputmode="decimal" placeholder="—"></div>
+      </div>
+      <div class="row">
+        <div class="field"><label>Vitamina D (ng/mL)</label><input type="number" step="0.1" id="lab_vitd" inputmode="decimal" placeholder="—"></div>
+        <div class="field"><label>Peso (kg)</label><input type="number" step="0.1" id="lab_peso" inputmode="decimal" placeholder="—"></div>
+      </div>
+      <button class="save" onclick="addLab()">Guardar analítica</button>
+    </div>
+  </section>
+</main>
+
+<nav>
+  <button class="on" data-v="hoy" onclick="go('hoy')"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>Hoy</button>
+  <button data-v="ejercicio" onclick="go('ejercicio')"><svg viewBox="0 0 24 24"><path d="M6.5 6.5l11 11M4 9l2-2m12 12l2-2M8 4L4 8m12 12l4-4M2 12l2 2m16-4l2 2"/></svg>Ejercicio</button>
+  <button data-v="comer" onclick="go('comer')"><svg viewBox="0 0 24 24"><path d="M6 3v8a3 3 0 006 0V3M9 3v18M18 3c-1.5 1-2 3-2 6s.5 4 2 4v8"/></svg>Comer</button>
+  <button data-v="medicacion" onclick="go('medicacion')"><svg viewBox="0 0 24 24"><rect x="2.5" y="8.5" width="19" height="7" rx="3.5"/><path d="M12 8.5v7"/></svg>Medicación</button>
+  <button data-v="analisis" onclick="go('analisis')"><svg viewBox="0 0 24 24"><path d="M4 19V5M4 19h16M8 15l3-4 3 2 4-6"/></svg>Análisis</button>
+</nav>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const mem={};
+const store={
+  get(k){try{const v=localStorage.getItem(k);return v?JSON.parse(v):null;}catch(e){return mem[k]??null;}},
+  set(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){mem[k]=v;}}
+};
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+const dKey=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const todayKey=()=>dKey(new Date());
+const nowHM=()=>new Date().toTimeString().slice(0,5);
+const hmToMin=hm=>{const[h,m]=hm.split(':').map(Number);return h*60+m;};
+const fmtN=n=>n.toLocaleString('es-ES');
+
+let meals=store.get('cg_meals')||[];
+let acts=store.get('cg_acts')||[];
+let labs=store.get('cg_labs');
+let medDays=store.get('cg_meds')||{};
+let energy=store.get('cg_energy')||{};
+let histMode='week';
+
+if(!labs){
+  labs=[{id:uid(),date:'2026-03-14',glucosa:121,hba1c:5.4,alt:90,ggt:74,ast:48,insulina:9.44,vitd:24.01,peso:90.9}];
+  store.set('cg_labs',labs);
+}
+
+function go(v){
+  document.querySelectorAll('.view').forEach(s=>s.classList.remove('active'));
+  document.getElementById('view-'+v).classList.add('active');
+  document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
+  window.scrollTo(0,0);
+  if(v==='ejercicio'){document.getElementById('act_time').value=nowHM();renderActLog();}
+  if(v==='comer'){document.getElementById('mealTime').value=nowHM();renderMealLog();}
+  if(v==='medicacion')renderMeds();
+  if(v==='analisis')renderLabs();
+}
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),1900);}
+
+document.getElementById('mealChips').addEventListener('click',e=>{const c=e.target.closest('.chip');if(!c)return;document.querySelectorAll('#mealChips .chip').forEach(x=>x.classList.remove('on'));c.classList.add('on');});
+document.getElementById('actChips').addEventListener('click',e=>{
+  const c=e.target.closest('.chip');if(!c)return;
+  document.querySelectorAll('#actChips .chip').forEach(x=>x.classList.remove('on'));c.classList.add('on');
+  document.querySelectorAll('#view-ejercicio .grp').forEach(g=>g.hidden=g.dataset.grp!==c.dataset.k);
+});
+document.getElementById('gym_name').addEventListener('change',e=>{document.getElementById('gym_other_wrap').hidden=e.target.value!=='Otro';});
+const chipVal=id=>document.querySelector('#'+id+' .chip.on').dataset.k;
+
+/* energía */
+const EMO=['','😩','😕','😐','😊','😄'];
+const ENERGY_LABELS=['Sin marcar','Agotada','Baja','Normal','Bien','Llena'];
+function setEnergy(l){const k=todayKey();energy[k]=(energy[k]===l?0:l);store.set('cg_energy',energy);renderEnergy();renderHist();}
+function renderEnergy(){
+  const cur=energy[todayKey()]||0;
+  document.querySelectorAll('#energyStrip button').forEach((b,i)=>b.classList.toggle('on',(i+1)===cur));
+  document.getElementById('energyLabel').textContent=cur?ENERGY_LABELS[cur]+' '+EMO[cur]:'Sin marcar';
+}
+function setHist(m){histMode=m;document.querySelectorAll('.hist-tabs button').forEach(b=>b.classList.toggle('on',b.dataset.h===m));renderHist();}
+function renderHist(){
+  const el=document.getElementById('energyHist');const tk=todayKey();
+  if(histMode==='week'){
+    let c='';const wd=['D','L','M','X','J','V','S'];
+    for(let i=6;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);const k=dKey(d);const lv=energy[k]||0;
+      c+=`<div class="hcell ${k===tk?'today':''}"><div class="hd">${wd[d.getDay()]}</div><div class="he ${lv?'':'empty'}">${lv?EMO[lv]:'·'}</div></div>`;}
+    el.innerHTML=`<div class="hweek">${c}</div>`;
+  }else{
+    const now=new Date();const y=now.getFullYear(),mo=now.getMonth();
+    const start=(new Date(y,mo,1).getDay()+6)%7;const days=new Date(y,mo+1,0).getDate();
+    let c=['L','M','X','J','V','S','D'].map(h=>`<div class="mh">${h}</div>`).join('');
+    for(let i=0;i<start;i++)c+='<div class="mc blank"></div>';
+    for(let dnum=1;dnum<=days;dnum++){const k=dKey(new Date(y,mo,dnum));const lv=energy[k]||0;
+      c+=`<div class="mc ${k===tk?'today':''}">${lv?EMO[lv]:`<span class="dn">${dnum}</span>`}</div>`;}
+    el.innerHTML=`<div class="hmonth">${c}</div>`;
+  }
+}
+
+/* ejercicio */
+let gymDraft=[];
+function addGymEx(){
+  let name=document.getElementById('gym_name').value;
+  if(name==='Otro')name=document.getElementById('gym_other').value.trim()||'Otro';
+  gymDraft.push({name,sets:+document.getElementById('gym_sets').value||null,reps:+document.getElementById('gym_reps').value||null,weight:+document.getElementById('gym_weight').value||null});
+  ['gym_sets','gym_reps','gym_weight'].forEach(i=>document.getElementById(i).value='');
+  renderGymDraft();
+}
+function rmGymEx(i){gymDraft.splice(i,1);renderGymDraft();}
+function renderGymDraft(){
+  document.getElementById('gymDraft').innerHTML=gymDraft.map((e,i)=>`<li><div class="ic">🏋️</div><div class="txt"><div class="t">${e.name}</div><div class="s">${(e.sets||'?')}×${(e.reps||'?')}${e.weight?' · '+e.weight+' kg':''}</div></div><button class="del" onclick="rmGymEx(${i})">×</button></li>`).join('');
+}
+function saveExercise(){
+  const kind=chipVal('actChips');const time=document.getElementById('act_time').value||nowHM();
+  let a={id:uid(),date:todayKey(),time,kind};
+  if(kind==='Caminar'){a.min=+document.getElementById('cam_min').value||null;a.steps=+document.getElementById('cam_steps').value||null;a.note=document.getElementById('cam_note').value.trim();if(!a.min&&!a.steps){toast('Pon minutos o pasos');return;}}
+  else if(kind==='Gimnasio'){if(!gymDraft.length){toast('Añade al menos un ejercicio');return;}a.exercises=gymDraft.slice();a.min=+document.getElementById('gym_min').value||null;}
+  else if(kind==='Natación'){a.style=document.getElementById('swim_style').value;a.largos=+document.getElementById('swim_largos').value||null;a.min=+document.getElementById('swim_min').value||null;if(!a.largos&&!a.min){toast('Pon largos o minutos');return;}}
+  else if(kind==='Cardio'){a.cardioType=document.getElementById('cardio_type').value;a.min=+document.getElementById('cardio_min').value||null;if(!a.min){toast('Pon los minutos');return;}}
+  else if(kind==='Clase'){a.className=document.getElementById('class_type').value;a.min=+document.getElementById('class_min').value||null;if(!a.min){toast('Pon los minutos');return;}}
+  acts.push(a);store.set('cg_acts',acts);
+  gymDraft=[];renderGymDraft();
+  ['cam_min','cam_steps','cam_note','swim_largos','swim_min','cardio_min','class_min','gym_min'].forEach(i=>document.getElementById(i).value='');
+  renderActLog();renderHoy();toast('Ejercicio guardado');go('hoy');
+}
+const actIcon={Caminar:'🚶',Gimnasio:'🏋️',Natación:'🏊',Cardio:'🚴',Clase:'🤸'};
+function actDetail(a){
+  if(a.kind==='Caminar')return[a.min?a.min+' min':null,a.steps?fmtN(a.steps)+' pasos':null,a.note].filter(Boolean).join(' · ');
+  if(a.kind==='Gimnasio')return(a.min?a.min+' min · ':'')+a.exercises.map(e=>e.name+' '+(e.sets||'?')+'×'+(e.reps||'?')+(e.weight?' '+e.weight+'kg':'')).join('  ·  ');
+  if(a.kind==='Natación')return[a.style,a.largos?a.largos+' largos':null,a.min?a.min+' min':null].filter(Boolean).join(' · ');
+  if(a.kind==='Cardio')return[a.cardioType,a.min?a.min+' min':null].filter(Boolean).join(' · ');
+  if(a.kind==='Clase')return[a.className,a.min?a.min+' min':null].filter(Boolean).join(' · ');
+}
+function actMinutes(a){return a.min||0;}
+
+/* comidas */
+function addMeal(){
+  const text=document.getElementById('mealText').value.trim();if(!text){toast('Escribe qué has comido');return;}
+  meals.push({id:uid(),date:todayKey(),time:document.getElementById('mealTime').value||nowHM(),type:chipVal('mealChips'),text,carb:document.getElementById('mealCarb').checked});
+  store.set('cg_meals',meals);
+  document.getElementById('mealText').value='';document.getElementById('mealCarb').checked=false;
+  renderMealLog();renderHoy();toast('Comida guardada');go('hoy');
+}
+function delItem(kind,id){
+  if(kind==='act'){acts=acts.filter(x=>x.id!==id);store.set('cg_acts',acts);renderActLog();}
+  else{meals=meals.filter(x=>x.id!==id);store.set('cg_meals',meals);renderMealLog();}
+  renderHoy();
+}
+function todayItems(a){const t=todayKey();return a.filter(x=>x.date===t);}
+function fmtList(a){return a.slice().sort((x,y)=>x.time.localeCompare(y.time));}
+function renderActLog(){
+  const el=document.getElementById('actLog');const items=fmtList(todayItems(acts));
+  if(!items.length){el.innerHTML='<div class="empty">Nada aún. Un paseo corto ya cuenta.</div>';return;}
+  el.innerHTML=items.map(a=>`<li><div class="ic">${actIcon[a.kind]||'🏃'}</div><div class="txt"><div class="t">${a.kind}</div><div class="s">${actDetail(a)||'—'}</div></div><div class="time">${a.time}</div><button class="del" onclick="delItem('act','${a.id}')">×</button></li>`).join('');
+}
+function renderMealLog(){
+  const el=document.getElementById('mealLog');const items=fmtList(todayItems(meals));
+  if(!items.length){el.innerHTML='<div class="empty">Sin comidas registradas hoy.</div>';return;}
+  el.innerHTML=items.map(m=>`<li><div class="ic">🍽️</div><div class="txt"><div class="t">${m.type}${m.carb?' · <span style="color:var(--amber)">hidratos</span>':''}</div><div class="s">${m.text}</div></div><div class="time">${m.time}</div><button class="del" onclick="delItem('meal','${m.id}')">×</button></li>`).join('');
+}
+
+/* medicación */
+const FIXED_MEDS=[
+  {k:'eutirox',name:'Eutirox',sub:'1 comp · ~1 h antes del desayuno',due:9*60},
+  {k:'ovapress',name:'Ovapress',sub:'en el desayuno',due:10*60},
+  {k:'metfL',name:'Metformina',sub:'1 comp · en la comida',due:15*60},
+  {k:'metfD',name:'Metformina',sub:'½ comp · en la cena',due:22*60}
+];
+function medDay(){const k=todayKey();if(!medDays[k])medDays[k]={eutirox:false,ovapress:false,metfL:false,metfD:false,cycle:[]};return medDays[k];}
+function toggleMed(k){const d=medDay();d[k]=!d[k];store.set('cg_meds',medDays);renderMeds();renderHoy();}
+function addCycleMed(){
+  const name=document.getElementById('cyc_name').value.trim();if(!name){toast('Pon el nombre');return;}
+  const d=medDay();d.cycle.push({id:uid(),name,when:document.getElementById('cyc_when').value.trim(),taken:false});
+  store.set('cg_meds',medDays);document.getElementById('cyc_name').value='';document.getElementById('cyc_when').value='';renderMeds();renderHoy();
+}
+function toggleCycle(id){const d=medDay();const c=d.cycle.find(x=>x.id===id);if(c)c.taken=!c.taken;store.set('cg_meds',medDays);renderMeds();renderHoy();}
+function delCycle(id){const d=medDay();d.cycle=d.cycle.filter(x=>x.id!==id);store.set('cg_meds',medDays);renderMeds();renderHoy();}
+function renderMeds(){
+  const d=medDay();
+  document.getElementById('medDaily').innerHTML=FIXED_MEDS.map(m=>`<li class="${d[m.k]?'done':''}" onclick="toggleMed('${m.k}')"><div class="box">✓</div><div><div class="m-name">${m.name}</div><div class="m-sub">${m.sub}</div></div></li>`).join('');
+  document.getElementById('medProgress').textContent=FIXED_MEDS.filter(m=>d[m.k]).length+'/4';
+  const cyc=document.getElementById('medCycle');
+  cyc.innerHTML=d.cycle.length?d.cycle.map(c=>`<li class="${c.taken?'done':''}" onclick="toggleCycle('${c.id}')"><div class="box">✓</div><div><div class="m-name">${c.name}</div>${c.when?`<div class="m-sub">${c.when}</div>`:''}</div><button class="m-del" onclick="event.stopPropagation();delCycle('${c.id}')">×</button></li>`).join(''):'<div class="empty">Sin medicación de ciclo hoy.</div>';
+}
+
+/* hoy */
+function renderHoy(){
+  const tm=todayItems(meals),ta=todayItems(acts);
+  document.getElementById('statMin').textContent=ta.reduce((s,a)=>s+actMinutes(a),0);
+  const steps=ta.reduce((s,a)=>s+(a.steps||0),0);
+  document.getElementById('statSteps').textContent=steps?fmtN(steps):'0';
+  document.getElementById('statMeals').textContent=tm.length;
+  renderTimeline(tm,ta);renderNudges(tm,ta);renderEnergy();renderHist();
+}
+function pos(hm){const m=hmToMin(hm),lo=420,hi=1320;return Math.max(2,Math.min(98,((m-lo)/(hi-lo))*100));}
+function renderTimeline(tm,ta){
+  const tl=document.getElementById('timeline');tl.querySelectorAll('.seg,.mark').forEach(n=>n.remove());
+  ta.forEach(a=>{const s=document.createElement('div');s.className='seg';const w=Math.min(14,((actMinutes(a)||30)/900)*100+3);s.style.left=pos(a.time)+'%';s.style.width=w+'%';tl.appendChild(s);});
+  tm.forEach(m=>{const d=document.createElement('div');d.className='mark '+(m.carb?'carb':'meal');d.style.left=pos(m.time)+'%';tl.appendChild(d);});
+}
+function renderNudges(tm,ta){
+  const box=document.getElementById('nudges');box.innerHTML='';
+  const now=hmToMin(nowHM());const d=medDay();
+
+  // medicación pendiente
+  const pend=FIXED_MEDS.filter(m=>!d[m.k]&&now>=m.due);
+  if(pend.length){
+    add(box,'nudge warn tap',`<b>Medicación pendiente.</b> Te falta: ${pend.map(m=>m.name+' ('+m.sub.split('·').pop().trim()+')').join(', ')}.`,`Toca para marcarla.`,()=>go('medicacion'));
+  }
+
+  // movimiento tras comer: comida más reciente (<3 h) sin NINGÚN ejercicio después
+  const cand=tm.filter(m=>{const mt=hmToMin(m.time);
+    return now-mt>=0 && now-mt<=180 && !ta.some(a=>hmToMin(a.time)>=mt);});
+  if(cand.length){
+    cand.sort((a,b)=>hmToMin(b.time)-hmToMin(a.time));const m=cand[0];
+    add(box,'nudge info tap',`<b>Un paseo ahora viene bien.</b> Registraste ${m.type.toLowerCase()} hace ${now-hmToMin(m.time)} min${m.carb?' (rica en hidratos)':''}.`,`Caminar 15-20 min tras comer suaviza la subida de glucosa.`,()=>go('ejercicio'));
+  }else if(tm.length&&ta.some(a=>tm.some(m=>hmToMin(a.time)>=hmToMin(m.time)))){
+    add(box,'nudge calm','<b>Bien.</b> Ya te has movido después de comer.','Eso ayuda al hígado y a la glucosa.');
+  }
+
+  // medicación completada
+  if(!pend.length&&FIXED_MEDS.every(m=>d[m.k])){
+    add(box,'nudge calm','<b>Medicación de hoy completada.</b>','',null);
+  }
+}
+function add(box,cls,html,why,onclick){
+  const el=document.createElement('div');el.className=cls;
+  el.innerHTML=`<span class="dot"></span><div class="body">${html}${why?`<span class="why">${why}</span>`:''}</div>`;
+  if(onclick)el.addEventListener('click',onclick);
+  box.appendChild(el);
+}
+
+/* analíticas */
+const LAB_DEFS=[
+  {k:'glucosa',name:'Glucosa',ref:'74–106',unit:'mg/dL',high:106},
+  {k:'hba1c',name:'HbA1c',ref:'4,3–6,1',unit:'%',high:6.1},
+  {k:'alt',name:'ALT / GPT',ref:'10–49',unit:'U/L',high:49},
+  {k:'ggt',name:'GGT',ref:'<38',unit:'U/L',high:38},
+  {k:'ast',name:'AST / GOT',ref:'<34',unit:'U/L',high:34},
+  {k:'insulina',name:'Insulina',ref:'3–25',unit:'µU/mL',high:25},
+  {k:'vitd',name:'Vitamina D',ref:'30–100',unit:'ng/mL',low:30},
+  {k:'peso',name:'Peso',ref:'—',unit:'kg'}
+];
+function addLab(){
+  const dt=document.getElementById('labDate').value;if(!dt){toast('Pon la fecha');return;}
+  const n=id=>{const v=document.getElementById(id).value;return v===''?null:parseFloat(v);};
+  labs.push({id:uid(),date:dt,glucosa:n('lab_glucosa'),hba1c:n('lab_hba1c'),alt:n('lab_alt'),ggt:n('lab_ggt'),ast:n('lab_ast'),insulina:n('lab_insulina'),vitd:n('lab_vitd'),peso:n('lab_peso')});
+  store.set('cg_labs',labs);
+  ['glucosa','hba1c','alt','ggt','ast','insulina','vitd','peso'].forEach(k=>document.getElementById('lab_'+k).value='');
+  renderLabs();toast('Analítica guardada');
+}
+function renderLabs(){
+  const sorted=labs.slice().sort((a,b)=>a.date.localeCompare(b.date));const cols=sorted.slice(-3);
+  let head='<tr><th>Marcador</th>'+cols.map(c=>'<th>'+new Date(c.date+'T00:00').toLocaleDateString('es-ES',{day:'2-digit',month:'short'})+'</th>').join('')+'</tr>';
+  let rows=LAB_DEFS.map(def=>{
+    const cells=cols.map((c,i)=>{
+      const v=c[def.k];if(v==null)return'<td class="val">—</td>';
+      let flag='';
+      if(def.high!=null&&v>def.high)flag='<span class="flag"></span>';
+      if(def.low!=null&&v<def.low)flag='<span class="flag"></span>';
+      let tr='';
+      if(i>0){const p=cols[i-1][def.k];if(p!=null){const df=v-p;const cls=df>0?'up':df<0?'down':'flat';const ar=df>0?'▲':df<0?'▼':'—';tr=`<span class="trend ${cls}">${ar}</span>`;}}
+      return`<td class="val">${(''+v).replace('.',',')}${flag}${tr}</td>`;
+    }).join('');
+    return`<tr><td class="name">${def.name}<div class="ref">${def.ref} ${def.unit}</div></td>${cells}</tr>`;
+  }).join('');
+  document.getElementById('labsTable').innerHTML=head+rows;
+}
+
+(function(){
+  const d=new Date();
+  document.getElementById('dateLabel').textContent=d.toLocaleDateString('es-ES',{weekday:'long',day:'numeric',month:'long'});
+  const h=d.getHours();
+  document.getElementById('greeting').textContent=h<12?'Buenos días, Cristina':h<20?'Buenas tardes, Cristina':'Buenas noches, Cristina';
+  document.getElementById('act_time').value=nowHM();
+  document.getElementById('mealTime').value=nowHM();
+  document.getElementById('labDate').value=todayKey();
+  renderHoy();
+})();
+
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>navigator.serviceWorker.register('service-worker.js').catch(()=>{}));
+}
+</script>
+</body>
+</html>
